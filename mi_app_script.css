@@ -1,0 +1,537 @@
+// ============================================
+// SCRIPT PRINCIPAL - ConectaMarketing MX
+// Funcionalidades: Menú móvil, scroll suave,
+// animaciones, formulario, contador y más
+// ============================================
+
+// Esperamos a que el DOM esté completamente cargado
+document.addEventListener('DOMContentLoaded', function() {
+    'use strict';
+
+    // ========================================
+    // 1. MENÚ MÓVIL (Hamburguesa)
+    // ========================================
+    const createMobileMenu = () => {
+        const navbar = document.querySelector('.navbar');
+        const navLinks = document.querySelector('.nav-links');
+        const navButtons = document.querySelector('.nav-buttons');
+        
+        // Crear botón hamburguesa si no existe
+        if (!document.querySelector('.hamburger')) {
+            const hamburger = document.createElement('div');
+            hamburger.className = 'hamburger';
+            hamburger.innerHTML = `
+                <span></span>
+                <span></span>
+                <span></span>
+            `;
+            
+            // Insertar antes de los botones de navegación
+            navbar.insertBefore(hamburger, navButtons);
+            
+            // Estilos para el menú móvil (los inyectamos aquí para mantener todo junto)
+            const style = document.createElement('style');
+            style.textContent = `
+                .hamburger {
+                    display: none;
+                    flex-direction: column;
+                    cursor: pointer;
+                    padding: 10px;
+                }
+                
+                .hamburger span {
+                    width: 25px;
+                    height: 3px;
+                    background: var(--primary-dark);
+                    margin: 2px 0;
+                    transition: 0.3s;
+                    border-radius: 3px;
+                }
+                
+                .hamburger.active span:nth-child(1) {
+                    transform: rotate(45deg) translate(5px, 5px);
+                }
+                
+                .hamburger.active span:nth-child(2) {
+                    opacity: 0;
+                }
+                
+                .hamburger.active span:nth-child(3) {
+                    transform: rotate(-45deg) translate(7px, -7px);
+                }
+                
+                @media (max-width: 968px) {
+                    .hamburger {
+                        display: flex;
+                    }
+                    
+                    .nav-links, .nav-buttons {
+                        position: fixed;
+                        top: 80px;
+                        left: -100%;
+                        width: 100%;
+                        background: var(--white);
+                        flex-direction: column;
+                        align-items: center;
+                        padding: 2rem;
+                        box-shadow: var(--shadow);
+                        transition: left 0.3s ease;
+                        z-index: 999;
+                    }
+                    
+                    .nav-links.active, .nav-buttons.active {
+                        left: 0;
+                    }
+                    
+                    .nav-links {
+                        top: 80px;
+                        gap: 2rem;
+                    }
+                    
+                    .nav-buttons {
+                        top: 350px;
+                        flex-direction: row;
+                        justify-content: center;
+                        background: transparent;
+                        box-shadow: none;
+                    }
+                    
+                    .nav-links.active + .nav-buttons.active {
+                        left: 0;
+                    }
+                }
+            `;
+            document.head.appendChild(style);
+            
+            // Evento del menú hamburguesa
+            hamburger.addEventListener('click', function() {
+                this.classList.toggle('active');
+                navLinks.classList.toggle('active');
+                navButtons.classList.toggle('active');
+                
+                // Bloquear scroll del body cuando el menú está abierto
+                document.body.style.overflow = navLinks.classList.contains('active') ? 'hidden' : '';
+            });
+            
+            // Cerrar menú al hacer clic en un enlace
+            const links = document.querySelectorAll('.nav-links a');
+            links.forEach(link => {
+                link.addEventListener('click', () => {
+                    hamburger.classList.remove('active');
+                    navLinks.classList.remove('active');
+                    navButtons.classList.remove('active');
+                    document.body.style.overflow = '';
+                });
+            });
+        }
+    };
+
+    // ========================================
+    // 2. SCROLL SUAVE PARA NAVEGACIÓN
+    // ========================================
+    const setupSmoothScroll = () => {
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                e.preventDefault();
+                const targetId = this.getAttribute('href');
+                
+                if (targetId === '#') return;
+                
+                const targetElement = document.querySelector(targetId);
+                if (targetElement) {
+                    const navbarHeight = document.querySelector('.navbar').offsetHeight;
+                    const targetPosition = targetElement.offsetTop - navbarHeight;
+                    
+                    window.scrollTo({
+                        top: targetPosition,
+                        behavior: 'smooth'
+                    });
+                }
+            });
+        });
+    };
+
+    // ========================================
+    // 3. NAVBAR QUE CAMBIA AL HACER SCROLL
+    // ========================================
+    const setupNavbarScroll = () => {
+        const navbar = document.querySelector('.navbar');
+        let lastScroll = 0;
+        
+        window.addEventListener('scroll', () => {
+            const currentScroll = window.pageYOffset;
+            
+            // Cambiar fondo del navbar
+            if (currentScroll > 50) {
+                navbar.style.background = 'rgba(255, 255, 255, 0.95)';
+                navbar.style.backdropFilter = 'blur(10px)';
+                navbar.style.boxShadow = '0 2px 10px rgba(0,0,0,0.1)';
+            } else {
+                navbar.style.background = 'var(--white)';
+                navbar.style.backdropFilter = 'none';
+                navbar.style.boxShadow = 'var(--shadow)';
+            }
+            
+            // Ocultar/mostrar navbar al hacer scroll (opcional)
+            if (currentScroll > lastScroll && currentScroll > 200) {
+                navbar.style.transform = 'translateY(-100%)';
+            } else {
+                navbar.style.transform = 'translateY(0)';
+            }
+            
+            lastScroll = currentScroll;
+        });
+    };
+
+    // ========================================
+    // 4. ANIMACIONES AL HACER SCROLL (REVEAL)
+    // ========================================
+    const setupScrollReveal = () => {
+        const revealElements = document.querySelectorAll(
+            '.step, .pricing-card, .security-item, .feature, .section-grid'
+        );
+        
+        const revealObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        });
+        
+        revealElements.forEach(element => {
+            element.style.opacity = '0';
+            element.style.transform = 'translateY(30px)';
+            element.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+            revealObserver.observe(element);
+        });
+    };
+
+    // ========================================
+    // 5. VALIDACIÓN Y ENVÍO DEL FORMULARIO
+    // ========================================
+    const setupFormValidation = () => {
+        const form = document.querySelector('.contact-form');
+        
+        if (form) {
+            form.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                // Obtener campos
+                const name = form.querySelector('input[type="text"]');
+                const email = form.querySelector('input[type="email"]');
+                const phone = form.querySelector('input[placeholder*="Teléfono"]');
+                const message = form.querySelector('textarea');
+                
+                // Validaciones
+                let isValid = true;
+                let errors = [];
+                
+                // Validar nombre
+                if (!name.value.trim()) {
+                    isValid = false;
+                    errors.push('El nombre es obligatorio');
+                    highlightField(name, false);
+                } else {
+                    highlightField(name, true);
+                }
+                
+                // Validar email
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (!email.value.trim() || !emailRegex.test(email.value)) {
+                    isValid = false;
+                    errors.push('El email no es válido');
+                    highlightField(email, false);
+                } else {
+                    highlightField(email, true);
+                }
+                
+                // Validar mensaje
+                if (!message.value.trim()) {
+                    isValid = false;
+                    errors.push('El mensaje es obligatorio');
+                    highlightField(message, false);
+                } else {
+                    highlightField(message, true);
+                }
+                
+                if (!isValid) {
+                    showNotification('Por favor, corrige los errores en el formulario', 'error');
+                    return;
+                }
+                
+                // Simular envío (aquí conectarías con tu backend)
+                const submitBtn = form.querySelector('button[type="submit"]');
+                const originalText = submitBtn.textContent;
+                
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Enviando...';
+                
+                // Simular delay de red
+                try {
+                    await new Promise(resolve => setTimeout(resolve, 1500));
+                    
+                    // Éxito
+                    showNotification('¡Mensaje enviado con éxito! Te contactaremos pronto.', 'success');
+                    form.reset();
+                    
+                } catch (error) {
+                    showNotification('Hubo un error. Por favor, intenta de nuevo.', 'error');
+                } finally {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = originalText;
+                }
+            });
+        }
+        
+        // Función para resaltar campos válidos/inválidos
+        function highlightField(field, isValid) {
+            field.style.borderColor = isValid ? 'var(--secondary)' : 'var(--accent)';
+            field.style.backgroundColor = isValid ? '' : 'rgba(255, 107, 53, 0.05)';
+            
+            // Resetear después de 2 segundos si es válido
+            if (isValid) {
+                setTimeout(() => {
+                    field.style.borderColor = 'var(--gray-200)';
+                    field.style.backgroundColor = '';
+                }, 2000);
+            }
+        }
+        
+        // Función para mostrar notificaciones
+        function showNotification(message, type) {
+            // Eliminar notificación existente
+            const existingNotification = document.querySelector('.notification');
+            if (existingNotification) {
+                existingNotification.remove();
+            }
+            
+            // Crear nueva notificación
+            const notification = document.createElement('div');
+            notification.className = `notification notification-${type}`;
+            notification.textContent = message;
+            
+            // Estilos de la notificación
+            notification.style.position = 'fixed';
+            notification.style.top = '100px';
+            notification.style.right = '20px';
+            notification.style.padding = '1rem 2rem';
+            notification.style.borderRadius = '10px';
+            notification.style.color = 'white';
+            notification.style.fontWeight = '600';
+            notification.style.zIndex = '10000';
+            notification.style.animation = 'slideIn 0.3s ease';
+            notification.style.backgroundColor = type === 'success' ? 'var(--secondary)' : 'var(--accent)';
+            
+            document.body.appendChild(notification);
+            
+            // Eliminar después de 5 segundos
+            setTimeout(() => {
+                notification.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => notification.remove(), 300);
+            }, 5000);
+        }
+    };
+
+    // ========================================
+    // 6. CONTADOR DE ESTADÍSTICAS (OPCIONAL)
+    // ========================================
+    const setupCounters = () => {
+        const counters = document.querySelectorAll('[data-counter]');
+        
+        if (counters.length > 0) {
+            const counterObserver = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const counter = entry.target;
+                        const target = parseInt(counter.getAttribute('data-counter'));
+                        const duration = 2000; // 2 segundos
+                        const step = target / (duration / 16); // 60fps
+                        let current = 0;
+                        
+                        const updateCounter = () => {
+                            current += step;
+                            if (current < target) {
+                                counter.textContent = Math.floor(current);
+                                requestAnimationFrame(updateCounter);
+                            } else {
+                                counter.textContent = target;
+                            }
+                        };
+                        
+                        updateCounter();
+                        counterObserver.unobserve(counter);
+                    }
+                });
+            });
+            
+            counters.forEach(counter => counterObserver.observe(counter));
+        }
+    };
+
+    // ========================================
+    // 7. BOTÓN "VOLVER ARRIBA"
+    // ========================================
+    const setupBackToTop = () => {
+        const backToTop = document.createElement('button');
+        backToTop.className = 'back-to-top';
+        backToTop.innerHTML = '↑';
+        backToTop.setAttribute('aria-label', 'Volver arriba');
+        
+        // Estilos del botón
+        backToTop.style.position = 'fixed';
+        backToTop.style.bottom = '30px';
+        backToTop.style.right = '30px';
+        backToTop.style.width = '50px';
+        backToTop.style.height = '50px';
+        backToTop.style.borderRadius = '50%';
+        backToTop.style.background = 'var(--primary)';
+        backToTop.style.color = 'white';
+        backToTop.style.border = 'none';
+        backToTop.style.cursor = 'pointer';
+        backToTop.style.fontSize = '1.5rem';
+        backToTop.style.display = 'none';
+        backToTop.style.alignItems = 'center';
+        backToTop.style.justifyContent = 'center';
+        backToTop.style.zIndex = '9999';
+        backToTop.style.transition = 'all 0.3s';
+        backToTop.style.boxShadow = 'var(--shadow-hover)';
+        
+        document.body.appendChild(backToTop);
+        
+        // Hover effect
+        backToTop.addEventListener('mouseenter', () => {
+            backToTop.style.background = 'var(--primary-dark)';
+            backToTop.style.transform = 'translateY(-3px)';
+        });
+        
+        backToTop.addEventListener('mouseleave', () => {
+            backToTop.style.background = 'var(--primary)';
+            backToTop.style.transform = 'translateY(0)';
+        });
+        
+        // Mostrar/ocultar al hacer scroll
+        window.addEventListener('scroll', () => {
+            if (window.pageYOffset > 300) {
+                backToTop.style.display = 'flex';
+            } else {
+                backToTop.style.display = 'none';
+            }
+        });
+        
+        // Función de scroll up
+        backToTop.addEventListener('click', () => {
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        });
+    };
+
+    // ========================================
+    // 8. PREVENIR CLICS VACÍOS EN ENLACES
+    // ========================================
+    const preventEmptyLinks = () => {
+        document.querySelectorAll('a[href="#"]').forEach(link => {
+            link.addEventListener('click', (e) => e.preventDefault());
+        });
+    };
+
+    // ========================================
+    // 9. ANIMACIÓN DE CARGA (OPCIONAL)
+    // ========================================
+    const setupLoadingAnimation = () => {
+        // Crear loader
+        const loader = document.createElement('div');
+        loader.className = 'page-loader';
+        loader.innerHTML = '<div class="loader-spinner"></div>';
+        
+        // Estilos del loader
+        const style = document.createElement('style');
+        style.textContent = `
+            .page-loader {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: white;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 99999;
+                transition: opacity 0.5s;
+            }
+            
+            .loader-spinner {
+                width: 50px;
+                height: 50px;
+                border: 5px solid var(--gray-200);
+                border-top-color: var(--primary);
+                border-radius: 50%;
+                animation: spin 1s linear infinite;
+            }
+            
+            @keyframes spin {
+                to { transform: rotate(360deg); }
+            }
+            
+            @keyframes slideIn {
+                from {
+                    transform: translateX(100%);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+            }
+            
+            @keyframes slideOut {
+                from {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+                to {
+                    transform: translateX(100%);
+                    opacity: 0;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+        
+        // Mostrar loader y ocultarlo cuando todo esté listo
+        document.body.appendChild(loader);
+        
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                loader.style.opacity = '0';
+                setTimeout(() => loader.remove(), 500);
+            }, 500);
+        });
+    };
+
+    // ========================================
+    // INICIALIZAR TODAS LAS FUNCIONES
+    // ========================================
+    const init = () => {
+        createMobileMenu();
+        setupSmoothScroll();
+        setupNavbarScroll();
+        setupScrollReveal();
+        setupFormValidation();
+        setupCounters();
+        setupBackToTop();
+        preventEmptyLinks();
+        setupLoadingAnimation();
+        
+        console.log('✅ ConectaMarketing MX - Scripts inicializados correctamente');
+    };
+
+    // Arrancar todo
+    init();
+});
